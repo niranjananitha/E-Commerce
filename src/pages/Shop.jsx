@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { subscribeActiveProducts } from '../firebase/productService';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
-import { Search, Filter, SlidersHorizontal, X, ChevronRight, LayoutGrid, List } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Shop = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [priceRange, setPriceRange] = useState(50000);
+  const [priceRange, setPriceRange] = useState(200000);
 
   const location = useLocation();
   const categories = [
@@ -22,18 +23,18 @@ const Shop = () => {
     'Footwear',
     'Accessories',
     'Home & Kitchen',
-    'Other',
     'Home & Living',
     'Grocery',
     'Books',
     'Sports',
     'Beauty',
+    'Other',
   ];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const category = params.get('category');
-    if (category) setSelectedCategory(category);
+    setSelectedCategory(category || 'All');
     
     window.scrollTo(0, 0);
   }, [location]);
@@ -111,7 +112,13 @@ const Shop = () => {
                   {categories.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setSelectedCategory(cat)}
+                      onClick={() => {
+                        if (cat === 'All') {
+                          navigate('/shop');
+                        } else {
+                          navigate(`/shop?category=${encodeURIComponent(cat)}`);
+                        }
+                      }}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
                         selectedCategory === cat 
                         ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]' 
@@ -132,8 +139,8 @@ const Shop = () => {
                   <input 
                     type="range" 
                     min="0" 
-                    max="100000" 
-                    step="1000"
+                    max="200000" 
+                    step="5000"
                     value={priceRange}
                     onChange={(e) => setPriceRange(parseInt(e.target.value))}
                     className="w-full accent-primary h-1 bg-slate-100 rounded-full appearance-none cursor-pointer"
@@ -202,7 +209,7 @@ const Shop = () => {
                 <h3 className="text-2xl font-black mb-2 tracking-tight">No products found</h3>
                 <p className="text-fresh-muted font-medium mb-10 max-w-xs mx-auto">We couldn't find anything matching your filters. Try adjusting them!</p>
                 <button 
-                  onClick={() => { setSelectedCategory('All'); setPriceRange(100000); setSearchQuery(''); }}
+                  onClick={() => { setSelectedCategory('All'); setPriceRange(200000); setSearchQuery(''); navigate('/shop'); }}
                   className="btn-primary"
                 >
                   Clear All Filters

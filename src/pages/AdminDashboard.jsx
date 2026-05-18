@@ -21,7 +21,19 @@ import {
 } from '../firebase/productService';
 import { verifyToken } from '../utils/jwt';
 
-const categories = ['Electronics', 'Clothing', 'Footwear', 'Accessories', 'Home & Kitchen', 'Other'];
+const categories = [
+  'Electronics',
+  'Clothing',
+  'Footwear',
+  'Accessories',
+  'Home & Kitchen',
+  'Home & Living',
+  'Grocery',
+  'Books',
+  'Sports',
+  'Beauty',
+  'Other'
+];
 
 const initialForm = {
   name: '',

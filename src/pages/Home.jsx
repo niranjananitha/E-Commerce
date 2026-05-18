@@ -121,33 +121,38 @@ const Home = () => {
         {/* Modern Category Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {categories.map((cat, idx) => (
-            <motion.div 
+            <Link 
               key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="glass-card group cursor-pointer overflow-hidden flex flex-col h-[400px] hover:scale-[1.02] transition-all duration-500"
+              to={`/shop?category=${encodeURIComponent(cat.name)}`}
+              className="block"
             >
-              <div className="p-6 pb-0 flex justify-between items-start">
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-1">{cat.name}</h3>
-                  <p className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Shop Now <ArrowRight size={14} />
-                  </p>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="glass-card group cursor-pointer overflow-hidden flex flex-col h-[400px] hover:scale-[1.02] transition-all duration-500"
+              >
+                <div className="p-6 pb-0 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-1">{cat.name}</h3>
+                    <p className="text-xs font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Shop Now <ArrowRight size={14} />
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-2xl ${cat.color} flex items-center justify-center`}>
+                    {cat.icon}
+                  </div>
                 </div>
-                <div className={`w-12 h-12 rounded-2xl ${cat.color} flex items-center justify-center`}>
-                  {cat.icon}
+                <div className="flex-1 overflow-hidden p-6">
+                  <img 
+                    src={cat.image} 
+                    alt={cat.name} 
+                    className="w-full h-full object-cover rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-700"
+                  />
                 </div>
-              </div>
-              <div className="flex-1 overflow-hidden p-6">
-                <img 
-                  src={cat.image} 
-                  alt={cat.name} 
-                  className="w-full h-full object-cover rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-700"
-                />
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </section>
 

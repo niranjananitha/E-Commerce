@@ -23,8 +23,121 @@ const normalizeProduct = (id, product = {}) => {
   };
 };
 
+const defaultProducts = [
+  {
+    name: "iPhone 15 Pro Max",
+    description: "Experience the ultimate iPhone. Titanium design, groundbreaking A17 Pro chip, customizable Action button, and the most powerful iPhone camera system ever.",
+    price: 159900,
+    category: "Electronics",
+    stock: 25,
+    imageURL: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80",
+    badge: "Hot",
+    rating: 4.9,
+    reviewCount: 124,
+    isActive: true
+  },
+  {
+    name: "Sony WH-1000XM5 Wireless Headphones",
+    description: "Industry-leading noise cancellation headphones with premium sound, crystal-clear hands-free calling, and up to 30 hours of battery life.",
+    price: 29990,
+    category: "Electronics",
+    stock: 40,
+    imageURL: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=800&q=80",
+    badge: "Best Seller",
+    rating: 4.8,
+    reviewCount: 312,
+    isActive: true
+  },
+  {
+    name: "Premium Silk Button-Up Shirt",
+    description: "Crafted from 100% pure mulberry silk. A sophisticated drape, ultra-smooth texture, and a timeless silhouette designed for effortless elegance.",
+    price: 7999,
+    category: "Clothing",
+    stock: 15,
+    imageURL: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80",
+    badge: "New",
+    rating: 4.6,
+    reviewCount: 45,
+    isActive: true
+  },
+  {
+    name: "Handcrafted Italian Leather Boots",
+    description: "Meticulously crafted in Italy from full-grain calfskin leather. Durable Goodyear welt construction, rich hand-burnished finish, and exceptional comfort.",
+    price: 18999,
+    category: "Footwear",
+    stock: 12,
+    imageURL: "https://images.unsplash.com/photo-1520639888713-7851133b1ed0?w=800&q=80",
+    badge: "Trending",
+    rating: 4.7,
+    reviewCount: 88,
+    isActive: true
+  },
+  {
+    name: "Minimalist Gold-Plated Watch",
+    description: "A stunning timepiece featuring a 38mm brushed gold-plated stainless steel case, clean indices, premium Japanese quartz movement, and a genuine leather strap.",
+    price: 14999,
+    category: "Accessories",
+    stock: 18,
+    imageURL: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&q=80",
+    badge: "Luxe",
+    rating: 4.5,
+    reviewCount: 56,
+    isActive: true
+  },
+  {
+    name: "Premium Handwoven Cashmere Throw",
+    description: "Wrap yourself in pure luxury. Handwoven in the Himalayas from exceptionally soft, high-grade cashmere. Adds sophisticated warmth to any living space.",
+    price: 12499,
+    category: "Home & Living",
+    stock: 8,
+    imageURL: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?w=800&q=80",
+    badge: "Exclusive",
+    rating: 4.9,
+    reviewCount: 29,
+    isActive: true
+  },
+  {
+    name: "Artisanal Single-Origin Coffee Gift Set",
+    description: "A curated selection of three rare, single-origin whole bean coffees sourced sustainably from Ethiopia, Colombia, and Sumatra. Freshly roasted.",
+    price: 2499,
+    category: "Grocery",
+    stock: 50,
+    imageURL: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&q=80",
+    badge: "Gourmet",
+    rating: 4.8,
+    reviewCount: 142,
+    isActive: true
+  }
+];
+
+let isSeeding = false;
+
+export const seedProductsData = async () => {
+  if (isSeeding) return;
+  isSeeding = true;
+  console.log('Seeding default products into Realtime Database...');
+  try {
+    const productsRef = ref(rtdb, productsPath);
+    for (const product of defaultProducts) {
+      const newRef = push(productsRef);
+      await set(newRef, {
+        ...product,
+        createdAt: Date.now()
+      });
+    }
+    console.log('Successfully seeded default products!');
+  } catch (error) {
+    console.error('Failed to seed products:', error);
+  } finally {
+    isSeeding = false;
+  }
+};
+
 const snapshotToProducts = (snapshot, activeOnly = true) => {
-  if (!snapshot.exists()) return [];
+  if (!snapshot.exists()) {
+    seedProductsData().catch(console.error);
+    return [];
+  }
 
   return Object.entries(snapshot.val())
     .map(([id, product]) => normalizeProduct(id, product))
@@ -116,8 +229,4 @@ export const getProductById = async (id) => {
 
   const product = normalizeProduct(snapshot.key, snapshot.val());
   return product.isActive ? product : null;
-};
-
-export const seedProductsData = async () => {
-  console.warn('Product seeding is disabled. Products are managed from the admin dashboard in Realtime Database.');
 };
