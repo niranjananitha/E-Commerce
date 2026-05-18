@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged 
+import {
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
 import toast from 'react-hot-toast';
