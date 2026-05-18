@@ -230,3 +230,17 @@ export const getProductById = async (id) => {
   const product = normalizeProduct(snapshot.key, snapshot.val());
   return product.isActive ? product : null;
 };
+
+export const updateProduct = async (id, product) => {
+  const productRef = ref(rtdb, `${productsPath}/${id}`);
+  await set(productRef, {
+    name: product.name.trim(),
+    description: product.description.trim(),
+    price: Number(product.price),
+    category: product.category,
+    stock: Number(product.stock),
+    imageURL: product.imageURL.trim(),
+    createdAt: product.createdAt || Date.now(),
+    isActive: product.isActive !== undefined ? product.isActive : true,
+  });
+};

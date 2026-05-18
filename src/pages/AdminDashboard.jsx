@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Calendar,
+  Edit,
   ImageIcon,
   IndianRupee,
   LogOut,
@@ -18,6 +19,7 @@ import {
   permanentlyDeleteProduct,
   removeProductFromStorefront,
   subscribeAllProducts,
+  updateProduct,
 } from '../firebase/productService';
 import { verifyToken } from '../utils/jwt';
 
@@ -49,6 +51,7 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [activeCount, setActiveCount] = useState(0);
   const [form, setForm] = useState(initialForm);
+  const [editingProductId, setEditingProductId] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -77,35 +80,55 @@ const AdminDashboard = () => {
     navigate('/admin');
   };
 
-  const handleAddProduct = async (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
     setSuccessMessage('');
     setFormError('');
 
     try {
-      await addProduct(form);
-      const message = 'Product added successfully';
-      setSuccessMessage(message);
-      setForm(initialForm);
-      toast.success(message);
+      if (editingProductId) {
+        await updateProduct(editingProductId, form);
+        const message = 'Product updated successfully';
+        setSuccessMessage(message);
+        setForm(initialForm);
+        setEditingProductId(null);
+        toast.success(message);
+      } else {
+        await addProduct(form);
+        const message = 'Product added successfully';
+        setSuccessMessage(message);
+        setForm(initialForm);
+        toast.success(message);
+      }
     } catch (error) {
       const isPermissionDenied = error.message?.includes('PERMISSION_DENIED');
       const message = isPermissionDenied
         ? 'Firebase denied this write. Deploy database.rules.json to allow writes to /products.'
-        : 'Failed to add product: ' + error.message;
+        : `Failed to ${editingProductId ? 'update' : 'add'} product: ` + error.message;
 
       setFormError(message);
       toast.error(message);
     }
   };
 
-  const handleRemove = async (productId) => {
-    try {
-      await removeProductFromStorefront(productId);
-      toast.success('Product removed from storefront');
-    } catch (error) {
-      toast.error('Failed to remove product');
-    }
+  const handleStartEdit = (product) => {
+    setEditingProductId(product.id);
+    setForm({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      stock: product.stock,
+      imageURL: product.imageURL,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProductId(null);
+    setForm(initialForm);
+    setSuccessMessage('');
+    setFormError('');
   };
 
   const handleDelete = async (productId) => {
@@ -176,10 +199,20 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[430px_1fr]">
             <section className="glass-card h-fit p-6 lg:sticky lg:top-28">
               <h3 className="mb-1 flex items-center gap-2 text-xl font-black text-slate-900">
-                <Plus size={20} className="text-primary" /> Add Product
+                {editingProductId ? (
+                  <>
+                    <Edit size={20} className="text-primary" /> Edit Product
+                  </>
+                ) : (
+                  <>
+                    <Plus size={20} className="text-primary" /> Add Product
+                  </>
+                )}
               </h3>
               <p className="mb-6 text-sm font-medium text-freshmuted">
-                Create a Realtime Database product under /products.
+                {editingProductId 
+                  ? 'Update the product details in Realtime Database.' 
+                  : 'Create a Realtime Database product under /products.'}
               </p>
 
               {formError && (
@@ -189,7 +222,7 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              <form onSubmit={handleAddProduct} className="space-y-4">
+              <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div>
                   <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-500">Product Name</label>
                   <input required type="text" value={form.name} onChange={e => updateField('name', e.target.value)} className="input-fresh bg-slate-50" />
@@ -223,9 +256,20 @@ const AdminDashboard = () => {
                     {successMessage}
                   </p>
                 )}
-                <button type="submit" className="btn-primary w-full py-3">
-                  Add Product <ArrowRight size={18} />
-                </button>
+                <div className="flex gap-3">
+                  {editingProductId && (
+                    <button 
+                      type="button" 
+                      onClick={handleCancelEdit} 
+                      className="btn-outline w-1/2 py-3 border-slate-200 text-slate-500 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button type="submit" className={`btn-primary py-3 flex items-center justify-center gap-2 ${editingProductId ? 'w-1/2' : 'w-full'}`}>
+                    {editingProductId ? 'Update' : 'Add Product'} <ArrowRight size={18} />
+                  </button>
+                </div>
               </form>
             </section>
 
@@ -273,10 +317,10 @@ const AdminDashboard = () => {
 
                       <div className="grid grid-cols-2 gap-3 border-t border-slate-100 p-4">
                         <button
-                          onClick={() => handleRemove(product.id)}
-                          className="flex items-center justify-center gap-2 rounded-2xl bg-orange-50 px-4 py-3 text-xs font-black text-orange-600 transition-colors hover:bg-orange-100"
+                          onClick={() => handleStartEdit(product)}
+                          className="flex items-center justify-center gap-2 rounded-2xl bg-indigo-50 px-4 py-3 text-xs font-black text-primary transition-colors hover:bg-indigo-100"
                         >
-                          <XCircle size={15} /> Remove
+                          <Edit size={15} /> Edit
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
