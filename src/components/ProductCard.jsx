@@ -9,11 +9,15 @@ import toast from 'react-hot-toast';
 const CATEGORY_FALLBACKS = {
   Electronics: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=75',
   Clothing:    'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=75',
+  Footwear:    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=75',
+  Accessories: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&q=75',
   Grocery:     'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=75',
+  'Home & Kitchen': 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400&q=75',
   'Home & Living': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=75',
   Books:       'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=75',
   Sports:      'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&q=75',
   Beauty:      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=75',
+  Other:       'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&q=75',
 };
 
 const ProductCard = ({ product }) => {

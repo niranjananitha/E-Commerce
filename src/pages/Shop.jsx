@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { getProductsRTDB } from '../firebase/productService';
+import { subscribeActiveProducts } from '../firebase/productService';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { Search, Filter, SlidersHorizontal, X, ChevronRight, LayoutGrid, List } from 'lucide-react';
@@ -15,22 +15,41 @@ const Shop = () => {
   const [priceRange, setPriceRange] = useState(50000);
 
   const location = useLocation();
-  const categories = ['All', 'Electronics', 'Clothing', 'Home & Living', 'Grocery', 'Books', 'Sports', 'Beauty'];
+  const categories = [
+    'All',
+    'Electronics',
+    'Clothing',
+    'Footwear',
+    'Accessories',
+    'Home & Kitchen',
+    'Other',
+    'Home & Living',
+    'Grocery',
+    'Books',
+    'Sports',
+    'Beauty',
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const category = params.get('category');
     if (category) setSelectedCategory(category);
     
-    const loadProducts = async () => {
-      setLoading(true);
-      const data = await getProductsRTDB();
-      setProducts(data);
-      setLoading(false);
-    };
-    loadProducts();
     window.scrollTo(0, 0);
   }, [location]);
+
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = subscribeActiveProducts(
+      data => {
+        setProducts(data);
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     let result = products;

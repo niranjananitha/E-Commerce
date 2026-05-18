@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getProducts, getProductsRTDB, seedProductsData } from '../firebase/productService';
+import { subscribeActiveProducts } from '../firebase/productService';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { motion } from 'framer-motion';
@@ -21,19 +21,16 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        let data = await getProductsRTDB();
+    setLoading(true);
+    const unsubscribe = subscribeActiveProducts(
+      data => {
         setProducts(data.slice(0, 10));
-        seedProductsData();
-      } catch (err) {
-        console.error('Failed to load products:', err);
-      } finally {
         setLoading(false);
-      }
-    };
-    loadData();
+      },
+      () => setLoading(false)
+    );
+
+    return () => unsubscribe();
   }, []);
 
   const categories = [

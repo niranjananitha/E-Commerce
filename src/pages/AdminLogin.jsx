@@ -7,17 +7,22 @@ import { Shield } from 'lucide-react';
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
+    setError('');
+
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       const token = generateToken({ role: "admin", email: ADMIN_EMAIL });
       localStorage.setItem("admin_token", token);
       toast.success('Admin login successful!');
       navigate('/admin/dashboard');
     } else {
-      toast.error('Invalid email or password');
+      const message = 'Invalid email or password';
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -53,6 +58,11 @@ const AdminLogin = () => {
               required
             />
           </div>
+          {error && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+              {error}
+            </p>
+          )}
           <button 
             type="submit"
             className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-colors"

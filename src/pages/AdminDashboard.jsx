@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { verifyToken } from '../utils/jwt';
-import { rtdb } from '../firebase/config';
-import { ref, onValue, push, set, remove } from 'firebase/database';
+import {
+  addProduct,
+  permanentlyDeleteProduct,
+  removeProductFromStorefront,
+  subscribeAllProducts,
+} from '../firebase/productService';
 import toast from 'react-hot-toast';
-import { LogOut, Package, Plus, Trash2, XCircle, CheckCircle } from 'lucide-react';
+import { LogOut, Package, Plus, Trash2, XCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ const AdminDashboard = () => {
   const [category, setCategory] = useState('Electronics');
   const [stock, setStock] = useState('');
   const [imageURL, setImageURL] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const categories = ['Electronics', 'Clothing', 'Footwear', 'Accessories', 'Home & Kitchen', 'Other'];
 
@@ -29,25 +34,10 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Fetch Products in Realtime
-    const productsRef = ref(rtdb, 'products');
-    const unsubscribe = onValue(productsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const productsArray = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
-        
-        // Sort by newest first
-        productsArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        
-        setProducts(productsArray);
-        setActiveCount(productsArray.filter(p => p.isActive).length);
-      } else {
-        setProducts([]);
-        setActiveCount(0);
-      }
+    const unsubscribe = subscribeAllProducts((productsArray) => {
+      const activeProducts = productsArray.filter(product => product.isActive);
+      setProducts(activeProducts);
+      setActiveCount(activeProducts.length);
     });
 
     return () => unsubscribe();
@@ -60,23 +50,20 @@ const AdminDashboard = () => {
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    setSuccessMessage('');
+
     try {
-      const productsRef = ref(rtdb, 'products');
-      const newProductRef = push(productsRef);
-      
-      const newProduct = {
+      await addProduct({
         name,
         description,
-        price: parseFloat(price),
+        price,
         category,
-        stock: parseInt(stock, 10),
+        stock,
         imageURL,
-        createdAt: Date.now(),
-        isActive: true
-      };
-
-      await set(newProductRef, newProduct);
-      toast.success('Product added successfully');
+      });
+      const message = 'Product added successfully';
+      setSuccessMessage(message);
+      toast.success(message);
       
       // Clear form
       setName('');
@@ -92,8 +79,7 @@ const AdminDashboard = () => {
 
   const handleRemove = async (productId) => {
     try {
-      const productRef = ref(rtdb, `products/${productId}/isActive`);
-      await set(productRef, false);
+      await removeProductFromStorefront(productId);
       toast.success('Product removed from storefront');
     } catch (error) {
       toast.error('Failed to remove product');
@@ -103,8 +89,7 @@ const AdminDashboard = () => {
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to permanently delete this product?")) {
       try {
-        const productRef = ref(rtdb, `products/${productId}`);
-        await remove(productRef);
+        await permanentlyDeleteProduct(productId);
         toast.success('Product permanently deleted');
       } catch (error) {
         toast.error('Failed to delete product');
@@ -145,7 +130,7 @@ const AdminDashboard = () => {
           {/* SECTION 2 - ADD PRODUCT */}
           <section className="lg:col-span-1 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-fit sticky top-24">
             <h2 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-              <Plus size={20} className="text-primary" /> Add New Product
+              <Plus size={20} className="text-primary" /> Add Product
             </h2>
             <form onSubmit={handleAddProduct} className="space-y-4">
               <div>
@@ -176,6 +161,11 @@ const AdminDashboard = () => {
                 <label className="block text-xs font-bold text-slate-700 mb-1">Image URL</label>
                 <input required type="url" value={imageURL} onChange={e => setImageURL(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
+              {successMessage && (
+                <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  {successMessage}
+                </p>
+              )}
               <button type="submit" className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-colors mt-4">
                 Add Product
               </button>
@@ -184,7 +174,7 @@ const AdminDashboard = () => {
 
           {/* SECTION 3 - PRODUCT LIST */}
           <section className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-black text-slate-900 mb-6 px-2">Manage Products</h2>
+            <h2 className="text-lg font-black text-slate-900 mb-6 px-2">Currently Listed Products</h2>
             {products.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-100">
                 <p className="text-slate-400 font-bold">No products found. Add some!</p>
@@ -192,7 +182,7 @@ const AdminDashboard = () => {
             ) : (
               <div className="space-y-4">
                 {products.map((product) => (
-                  <div key={product.id} className={`bg-white p-4 rounded-2xl shadow-sm border flex flex-col sm:flex-row gap-4 items-center transition-all ${product.isActive ? 'border-slate-100' : 'border-red-100 opacity-75'}`}>
+                  <div key={product.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-4 items-center transition-all">
                     <img src={product.imageURL} alt={product.name} className="w-20 h-20 rounded-xl object-cover bg-slate-50" />
                     <div className="flex-1 text-center sm:text-left">
                       <h3 className="font-bold text-slate-900">{product.name}</h3>
@@ -201,22 +191,20 @@ const AdminDashboard = () => {
                         <span className="text-primary">₹{product.price}</span>
                         <span className="text-slate-400">|</span>
                         <span className="text-slate-600">Stock: {product.stock}</span>
+                        <span className="text-slate-400">|</span>
+                        <span className="text-slate-500 text-xs font-normal">
+                          Added: {new Date(product.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                     
                     <div className="flex flex-col gap-2 min-w-[140px]">
-                      {product.isActive ? (
-                        <button 
-                          onClick={() => handleRemove(product.id)}
-                          className="flex items-center justify-center gap-2 bg-orange-50 text-orange-600 hover:bg-orange-100 px-4 py-2 rounded-xl text-xs font-bold transition-colors w-full"
-                        >
-                          <XCircle size={14} /> Remove
-                        </button>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1 text-red-500 text-xs font-bold py-2 bg-red-50 rounded-xl w-full">
-                           <XCircle size={14} /> Inactive
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => handleRemove(product.id)}
+                        className="flex items-center justify-center gap-2 bg-orange-50 text-orange-600 hover:bg-orange-100 px-4 py-2 rounded-xl text-xs font-bold transition-colors w-full"
+                      >
+                        <XCircle size={14} /> Remove
+                      </button>
                       
                       <button 
                         onClick={() => handleDelete(product.id)}

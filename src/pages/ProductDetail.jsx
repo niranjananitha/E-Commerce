@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductById } from '../firebase/productService';
+import { subscribeProductById } from '../firebase/productService';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { 
@@ -35,18 +35,28 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const loadProduct = async () => {
-      const data = await getProductById(id);
-      if (data) {
+    setLoading(true);
+    const unsubscribe = subscribeProductById(
+      id,
+      data => {
+        if (!data) {
+          toast.error("Product not found");
+          navigate('/shop');
+          return;
+        }
+
         setProduct(data);
-      } else {
+        setLoading(false);
+      },
+      () => {
         toast.error("Product not found");
         navigate('/shop');
       }
-      setLoading(false);
-    };
-    loadProduct();
+    );
+
     window.scrollTo(0, 0);
+
+    return () => unsubscribe();
   }, [id, navigate]);
 
   if (loading) return (
